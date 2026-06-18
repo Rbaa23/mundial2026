@@ -1,6 +1,6 @@
 module.exports = async (req, res) => {
-  const { endpoint, ...params } = req.query;
-  const key = req.headers['x-api-key'];
+  const { endpoint, apikey, ...params } = req.query;
+  const key = req.headers['x-api-key'] || apikey;
 
   if (!endpoint || !key) {
     res.status(400).json({ errors: ['missing endpoint or key'] });
@@ -20,6 +20,6 @@ module.exports = async (req, res) => {
     const data = await upstream.json();
     res.status(upstream.status).json(data);
   } catch (e) {
-    res.status(502).json({ errors: ['upstream_failed'] });
+    res.status(502).json({ errors: ['upstream_failed: ' + String(e && e.message || e)] });
   }
 };
