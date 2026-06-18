@@ -184,12 +184,7 @@
 (function(){
 'use strict';
 
-const API_BASE = 'https://v3.football.api-sports.io';
-const CORS_PROXIES = [
-  u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
-  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
-  u => 'https://thingproxy.freeboard.io/fetch/' + u,
-];
+const API_BASE = '/api/proxy';
 const LEAGUE_ID = 1;
 const SEASON = 2026;
 const TOURNAMENT_START = '2026-06-11';
@@ -203,38 +198,23 @@ const state = {
 
 async function cacheGet(key){
   try{
-    const r = await window.storage.get(key);
-    return r ? JSON.parse(r.value) : null;
+    const v = localStorage.getItem(key);
+    return v ? JSON.parse(v) : null;
   }catch(e){ return null; }
 }
 async function cacheSet(key, obj){
-  try{ await window.storage.set(key, JSON.stringify(obj)); }catch(e){ console.error('storage set failed', key, e); }
+  try{ localStorage.setItem(key, JSON.stringify(obj)); }catch(e){ console.error('storage set failed', key, e); }
 }
 function isFresh(ts, ttlMs){ return ts && (Date.now() - ts) < ttlMs; }
 
 async function apiRequest(endpoint, params){
-  const url = new URL(API_BASE + endpoint);
+  const url = new URL(API_BASE, window.location.origin);
+  url.searchParams.set('endpoint', endpoint);
   Object.entries(params || {}).forEach(([k,v])=> url.searchParams.set(k, v));
-  const target = url.toString();
-  let res, lastErr;
+  let res;
   try{
-    res = await fetch(target, { headers: { 'x-apisports-key': state.apiKey } });
+    res = await fetch(url.toString(), { headers: { 'x-api-key': state.apiKey } });
   }catch(e){
-    lastErr = e;
-    res = null;
-  }
-  if(!res){
-    for(const buildProxy of CORS_PROXIES){
-      try{
-        res = await fetch(buildProxy(target), { headers: { 'x-apisports-key': state.apiKey } });
-        if(res) break;
-      }catch(e){
-        lastErr = e;
-        res = null;
-      }
-    }
-  }
-  if(!res){
     throw new Error('NETWORK');
   }
   if(res.status===401 || res.status===403) throw new Error('AUTH');
