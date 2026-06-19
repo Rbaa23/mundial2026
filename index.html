@@ -49,7 +49,6 @@
   .nav-arrow{width:34px;height:34px;border-radius:10px;background:var(--surface);font-size:18px;color:var(--muted);}
   .nav-arrow:disabled{opacity:0.3;}
   .day-label{flex:1;text-align:center;font-weight:600;font-size:14px;text-transform:capitalize;}
-  .refresh-btn{font-size:12px;color:var(--muted);background:var(--surface);padding:7px 10px;border-radius:10px;}
   .match-list{flex:1;padding:0 14px 30px;display:flex;flex-direction:column;gap:10px;}
   .empty-state{padding:60px 20px;text-align:center;color:var(--muted);font-size:14px;line-height:1.5;}
   .match-card{
@@ -76,21 +75,7 @@
   }
   @keyframes slideup{from{transform:translateY(24px);opacity:0;}to{transform:translateY(0);opacity:1;}}
   .close-btn{position:absolute;top:14px;right:14px;}
-  .sheet h2{font-size:18px;margin:6px 0 4px;}
   .muted-text{color:var(--muted);font-size:13px;line-height:1.5;}
-  .steps{color:var(--muted);font-size:13px;line-height:1.6;padding-left:18px;margin:10px 0;}
-  .steps a{color:var(--steel);}
-  input[type=text]{
-    width:100%;background:var(--surface);border:1px solid var(--line);color:var(--text);
-    padding:13px 14px;border-radius:10px;font-size:14px;margin-top:10px;outline:none;
-  }
-  input[type=text]:focus{border-color:var(--gold);}
-  .primary-btn{
-    width:100%;background:var(--gold);color:#1a1404;font-weight:700;padding:13px;
-    border-radius:10px;margin-top:12px;font-size:14px;
-  }
-  .primary-btn:active{opacity:.85;}
-  .ghost-btn{width:100%;color:var(--muted);padding:10px;font-size:13px;margin-top:6px;}
   .detail-header{padding-top:6px;margin-bottom:18px;}
   .detail-round{font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.6px;font-weight:700;}
   .detail-venue{font-size:12px;color:var(--muted);margin-top:2px;}
@@ -129,14 +114,11 @@
   .dot.l{background:var(--red);color:#fcebe7;}
   .player-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);}
   .player-row:last-child{border-bottom:none;}
-  .player-photo{width:32px;height:32px;border-radius:50%;background:var(--surface-2);object-fit:cover;flex-shrink:0;}
+  .player-dot{width:28px;height:28px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--gold);flex-shrink:0;}
   .player-info{flex:1;min-width:0;}
   .player-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .player-team{font-size:11px;color:var(--muted);}
   .player-stat{font-size:12px;font-weight:700;color:var(--gold);text-align:right;white-space:nowrap;}
-  .h2h-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:7px 0;border-bottom:1px solid var(--line);color:var(--muted);}
-  .h2h-row:last-child{border-bottom:none;}
-  .h2h-score{font-weight:700;color:var(--text);}
   .skeleton{display:flex;flex-direction:column;gap:10px;padding:30px 0;align-items:center;color:var(--muted);font-size:13px;}
   .spinner{width:26px;height:26px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--gold);animation:spin .8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
@@ -148,7 +130,7 @@
 <div id="app">
   <header class="topbar">
     <div class="brand">MUNDIAL <span class="brand-year">2026</span></div>
-    <button id="settingsBtn" class="icon-btn" aria-label="Configuración">⚙</button>
+    <button id="refreshBtn" class="icon-btn" aria-label="Actualizar">↻</button>
   </header>
   <nav class="daynav">
     <button id="prevDay" class="nav-arrow">‹</button>
@@ -156,27 +138,11 @@
     <button id="nextDay" class="nav-arrow">›</button>
   </nav>
   <main id="matchList" class="match-list"></main>
-  <p class="disclaimer">Predicciones generadas con un modelo estadístico propio a partir de datos del torneo. Son estimaciones, no garantías.</p>
+  <p class="disclaimer">Predicciones generadas con un modelo estadístico propio a partir de los datos reales del torneo. Son estimaciones, no garantías.</p>
   <div id="detailOverlay" class="overlay hidden">
     <div class="sheet">
       <button class="icon-btn close-btn" data-close="detail" aria-label="Cerrar">✕</button>
       <div id="detailContent"></div>
-    </div>
-  </div>
-  <div id="settingsOverlay" class="overlay hidden">
-    <div class="sheet">
-      <button class="icon-btn close-btn" data-close="settings" aria-label="Cerrar">✕</button>
-      <h2>Clave de API</h2>
-      <p class="muted-text">Esta app usa API-Football para traer los partidos y estadísticas del Mundial 2026. Necesitás tu propia clave gratuita.</p>
-      <ol class="steps">
-        <li>Entrá a <span style="color:var(--steel)">dashboard.api-football.com</span></li>
-        <li>Creá una cuenta gratis (plan Free)</li>
-        <li>Copiá el "API Key" del panel</li>
-        <li>Pegalo abajo y guardá</li>
-      </ol>
-      <input id="apiKeyInput" type="text" placeholder="Pegá tu API key acá" autocomplete="off" autocapitalize="off" spellcheck="false">
-      <button id="saveKeyBtn" class="primary-btn">Guardar y cargar partidos</button>
-      <p id="keyStatus" class="muted-text"></p>
     </div>
   </div>
 </div>
@@ -184,222 +150,67 @@
 (function(){
 'use strict';
 
-const API_BASE = '/api/proxy';
-const LEAGUE_ID = 1;
-const SEASON = 2026;
+const ESPN_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=300';
 const TOURNAMENT_START = '2026-06-11';
 const TOURNAMENT_END = '2026-07-19';
 
-const state = {
-  apiKey: null,
-  fixtures: [],
-  selectedDate: null,
-};
+const state = { matches: [], selectedDate: null };
 
-async function cacheGet(key){
-  try{
-    const v = localStorage.getItem(key);
-    return v ? JSON.parse(v) : null;
-  }catch(e){ return null; }
+function cacheGet(key){
+  try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }catch(e){ return null; }
 }
-async function cacheSet(key, obj){
-  try{ localStorage.setItem(key, JSON.stringify(obj)); }catch(e){ console.error('storage set failed', key, e); }
-}
-function isFresh(ts, ttlMs){ return ts && (Date.now() - ts) < ttlMs; }
-
-async function apiRequest(endpoint, params){
-  const url = new URL(API_BASE, window.location.origin);
-  url.searchParams.set('endpoint', endpoint);
-  Object.entries(params || {}).forEach(([k,v])=> url.searchParams.set(k, v));
-  let res;
-  try{
-    res = await fetch(url.toString(), { headers: { 'x-api-key': state.apiKey } });
-  }catch(e){
-    throw new Error('NETWORK');
-  }
-  if(res.status===401 || res.status===403) throw new Error('AUTH');
-  if(res.status===429) throw new Error('RATE_LIMIT');
-  if(!res.ok) throw new Error('HTTP_'+res.status);
-  const data = await res.json();
-  if(data.errors){
-    const hasErrors = Array.isArray(data.errors) ? data.errors.length>0 : Object.keys(data.errors).length>0;
-    if(hasErrors){
-      const msg = Array.isArray(data.errors) ? data.errors.join(', ') : Object.values(data.errors).join(', ');
-      throw new Error('API_ERROR: '+msg);
-    }
-  }
-  return data;
+function cacheSet(key, obj){
+  try{ localStorage.setItem(key, JSON.stringify(obj)); }catch(e){}
 }
 
-async function apiAllPages(endpoint, params){
-  let page = 1, all = [];
-  while(true){
-    const data = await apiRequest(endpoint, Object.assign({}, params, {page}));
-    all = all.concat(data.response || []);
-    if(!data.paging || page >= data.paging.total) break;
-    page++;
-  }
-  return all;
+function normalize(json){
+  const events = json.events || [];
+  return events.map(ev=>{
+    const comp = ev.competitions && ev.competitions[0];
+    if(!comp) return null;
+    const home = comp.competitors.find(c=>c.homeAway==='home');
+    const away = comp.competitors.find(c=>c.homeAway==='away');
+    if(!home || !away) return null;
+    const mapTeam = c => ({
+      id: c.team.id,
+      name: c.team.displayName,
+      logo: c.team.logo,
+      score: c.score!=null ? Number(c.score) : null,
+      winner: !!c.winner,
+      form: c.form || '',
+      stats: (c.statistics||[]).reduce((acc,s)=>{ acc[s.name]=parseFloat(s.displayValue); return acc; },{})
+    });
+    return {
+      id: ev.id,
+      kickoff: new Date(ev.date),
+      statusState: comp.status.type.state,
+      statusDetail: comp.status.type.shortDetail,
+      venue: comp.venue ? comp.venue.fullName : '',
+      city: comp.venue && comp.venue.address ? comp.venue.address.city : '',
+      groupNote: comp.altGameNote || '',
+      home: mapTeam(home),
+      away: mapTeam(away),
+      details: comp.details || []
+    };
+  }).filter(Boolean);
 }
 
-async function loadFixtures(force){
-  const cached = await cacheGet('wc26:fixtures');
-  if(!force && cached && isFresh(cached.ts, 2*60*60*1000)){
-    state.fixtures = cached.data;
+async function loadMatches(force){
+  const cached = cacheGet('wc26:matches');
+  if(!force && cached && (Date.now()-cached.ts) < 5*60*1000){
+    state.matches = cached.data;
     return;
   }
-  const data = await apiAllPages('/fixtures', { league: LEAGUE_ID, season: SEASON });
-  state.fixtures = data;
-  await cacheSet('wc26:fixtures', { ts: Date.now(), data });
+  const res = await fetch(ESPN_URL);
+  if(!res.ok) throw new Error('HTTP_'+res.status);
+  const json = await res.json();
+  state.matches = normalize(json);
+  cacheSet('wc26:matches', { ts: Date.now(), data: state.matches });
 }
 
-async function getTeamBundle(teamId){
-  const key = 'wc26:team:'+teamId;
-  const cached = await cacheGet(key);
-  if(cached && isFresh(cached.ts, 6*60*60*1000)) return cached.data;
-  const [statsData, formData] = await Promise.all([
-    apiRequest('/teams/statistics', { league: LEAGUE_ID, season: SEASON, team: teamId }),
-    apiRequest('/fixtures', { team: teamId, last: 5 }),
-  ]);
-  const bundle = { stats: statsData.response || null, form: formData.response || [] };
-  await cacheSet(key, { ts: Date.now(), data: bundle });
-  return bundle;
-}
-
-async function getH2H(homeId, awayId){
-  const key = 'wc26:h2h:'+[homeId,awayId].sort().join('-');
-  const cached = await cacheGet(key);
-  if(cached && isFresh(cached.ts, 7*24*60*60*1000)) return cached.data;
-  const data = await apiRequest('/fixtures/headtohead', { h2h: homeId+'-'+awayId, last: 5 });
-  const list = data.response || [];
-  await cacheSet(key, { ts: Date.now(), data: list });
-  return list;
-}
-
-async function getTopScorers(){
-  const cached = await cacheGet('wc26:topscorers');
-  if(cached && isFresh(cached.ts, 12*60*60*1000)) return cached.data;
-  const data = await apiRequest('/players/topscorers', { league: LEAGUE_ID, season: SEASON });
-  const list = data.response || [];
-  await cacheSet('wc26:topscorers', { ts: Date.now(), data: list });
-  return list;
-}
-
-function factorial(n){ let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
-function poissonPMF(lambda, k){ return Math.exp(-lambda) * Math.pow(lambda,k) / factorial(k); }
-
-function buildMatrix(expHome, expAway, maxG){
-  const m = [];
-  for(let h=0; h<=maxG; h++){
-    const row = [];
-    for(let a=0; a<=maxG; a++) row.push(poissonPMF(expHome,h)*poissonPMF(expAway,a));
-    m.push(row);
-  }
-  return m;
-}
-function summarize(matrix){
-  let pH=0,pD=0,pA=0,best={h:0,a:0,p:-1};
-  for(let h=0;h<matrix.length;h++){
-    for(let a=0;a<matrix[h].length;a++){
-      const p = matrix[h][a];
-      if(h>a) pH+=p; else if(h===a) pD+=p; else pA+=p;
-      if(p>best.p) best={h,a,p};
-    }
-  }
-  return {pH,pD,pA,best};
-}
-function weightsFor(played){
-  if(played>=3) return [0.65,0.35];
-  if(played===2) return [0.5,0.5];
-  if(played===1) return [0.3,0.7];
-  return [0,1];
-}
-function blend(a,wa,b,wb){
-  const va=Number.isFinite(a), vb=Number.isFinite(b);
-  if(!va && !vb) return 1.2;
-  if(!va) return b;
-  if(!vb) return a;
-  return a*wa + b*wb;
-}
-function recentAvg(formArr, teamId, side){
-  if(!formArr || !formArr.length) return NaN;
-  let total=0, count=0;
-  formArr.forEach(fx=>{
-    const isHome = fx.teams.home.id===teamId;
-    let goals;
-    if(side==='for') goals = isHome ? fx.goals.home : fx.goals.away;
-    else goals = isHome ? fx.goals.away : fx.goals.home;
-    if(goals!=null){ total+=goals; count++; }
-  });
-  return count ? total/count : NaN;
-}
-function sumCardObj(obj){
-  if(!obj) return 0;
-  return Object.values(obj).reduce((acc,v)=> acc + ((v && v.total) || 0), 0);
-}
-function avgCards(stats){
-  if(!stats) return NaN;
-  const played = (stats.fixtures && stats.fixtures.played && stats.fixtures.played.total) || 0;
-  if(!played) return NaN;
-  return (sumCardObj(stats.cards && stats.cards.yellow) + sumCardObj(stats.cards && stats.cards.red)) / played;
-}
-
-function computePrediction(homeId, awayId, homeBundle, awayBundle){
-  const sH = homeBundle.stats, sA = awayBundle.stats;
-  const playedH = (sH && sH.fixtures && sH.fixtures.played && sH.fixtures.played.total) || 0;
-  const playedA = (sA && sA.fixtures && sA.fixtures.played && sA.fixtures.played.total) || 0;
-
-  const tgfH = sH ? parseFloat(sH.goals.for.average.total) : NaN;
-  const tgaH = sH ? parseFloat(sH.goals.against.average.total) : NaN;
-  const tgfA = sA ? parseFloat(sA.goals.for.average.total) : NaN;
-  const tgaA = sA ? parseFloat(sA.goals.against.average.total) : NaN;
-
-  const rgfH = recentAvg(homeBundle.form, homeId, 'for');
-  const rgaH = recentAvg(homeBundle.form, homeId, 'against');
-  const rgfA = recentAvg(awayBundle.form, awayId, 'for');
-  const rgaA = recentAvg(awayBundle.form, awayId, 'against');
-
-  const [wTH,wRH] = weightsFor(playedH);
-  const [wTA,wRA] = weightsFor(playedA);
-
-  const attackHome = blend(tgfH,wTH, rgfH,wRH);
-  const weakAway = blend(tgaA,wTA, rgaA,wRA);
-  const attackAway = blend(tgfA,wTA, rgfA,wRA);
-  const weakHome = blend(tgaH,wTH, rgaH,wRH);
-
-  let expHome = (attackHome + weakAway) / 2;
-  let expAway = (attackAway + weakHome) / 2;
-  expHome = Math.min(Math.max(expHome,0.3),3.6);
-  expAway = Math.min(Math.max(expAway,0.3),3.6);
-
-  const matrix = buildMatrix(expHome, expAway, 6);
-  const {pH,pD,pA,best} = summarize(matrix);
-
-  let probHome = Math.round(pH*100);
-  let probAway = Math.round(pA*100);
-  let probDraw = 100 - probHome - probAway;
-  if(probDraw<0){ probDraw=0; }
-
-  const cardsH = avgCards(sH), cardsA = avgCards(sA);
-  const cardsEstimate = (Number.isFinite(cardsH)?cardsH:3.2) + (Number.isFinite(cardsA)?cardsA:3.2);
-
-  const baselineGoals = 2.6;
-  const attackIndex = (expHome+expAway)/baselineGoals;
-  const cornersEstimate = Math.round(9.5*attackIndex*10)/10;
-
-  return {
-    expHome: Math.round(expHome*10)/10,
-    expAway: Math.round(expAway*10)/10,
-    predHome: best.h, predAway: best.a,
-    probHome, probDraw, probAway,
-    cardsEstimate: Math.round(cardsEstimate*10)/10,
-    cornersEstimate
-  };
-}
-
-function localDateKey(dateObj){
-  const y=dateObj.getFullYear(), m=String(dateObj.getMonth()+1).padStart(2,'0'), d=String(dateObj.getDate()).padStart(2,'0');
-  return `${y}-${m}-${d}`;
+function localDateKey(d){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
 }
 function fmtDayLabel(dateKey){
   const d = new Date(dateKey+'T12:00:00');
@@ -409,72 +220,64 @@ function fmtDayLabel(dateKey){
   if(dateKey===todayKey) label = 'Hoy · ' + d.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
   return label;
 }
-function fmtTime(iso){
-  return new Date(iso).toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+function fmtTime(d){ return d.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'}); }
+
+function translateRound(note){
+  if(!note) return '';
+  const map = [
+    [/Group ([A-L])/i, m=>'Fase de grupos · Grupo '+m[1]],
+    [/Round of 32/i, ()=>'Dieciseisavos de final'],
+    [/Round of 16/i, ()=>'Octavos de final'],
+    [/Quarterfinal/i, ()=>'Cuartos de final'],
+    [/Semifinal/i, ()=>'Semifinal'],
+    [/3rd Place/i, ()=>'Tercer puesto'],
+    [/Final/i, ()=>'Final'],
+  ];
+  for(const [re,fn] of map){ const m = note.match(re); if(m) return fn(m); }
+  return note.replace('FIFA World Cup, ','');
 }
-const ROUND_MAP = [
-  [/group stage.*-\s*(\d+)/i, g=>'Fase de grupos · J'+g[1]],
-  [/round of 32/i, ()=>'Dieciseisavos de final'],
-  [/round of 16/i, ()=>'Octavos de final'],
-  [/quarter/i, ()=>'Cuartos de final'],
-  [/semi/i, ()=>'Semifinal'],
-  [/3rd place/i, ()=>'Tercer puesto'],
-  [/final/i, ()=>'Final'],
-];
-function translateRound(round){
-  if(!round) return '';
-  for(const [re, fn] of ROUND_MAP){
-    const m = round.match(re);
-    if(m) return fn(m);
-  }
-  return round;
-}
-function statusInfo(fixture){
-  const s = fixture.fixture.status.short;
-  if(['1H','2H','HT','ET','P','LIVE','BT'].includes(s)) return {cls:'status-live', label:'En vivo'};
-  if(['FT','AET','PEN'].includes(s)) return {cls:'status-ft', label:'Finalizado'};
-  if(['PST'].includes(s)) return {cls:'status-ns', label:'Postergado'};
-  if(['CANC','ABD'].includes(s)) return {cls:'status-ns', label:'Cancelado'};
+
+function statusInfo(m){
+  if(m.statusState==='in') return {cls:'status-live', label:'En vivo'};
+  if(m.statusState==='post') return {cls:'status-ft', label:'Finalizado'};
   return {cls:'status-ns', label:'Por jugar'};
 }
 
 const elList = document.getElementById('matchList');
 const elDayLabel = document.getElementById('dayLabel');
 
-function fixturesForDate(dateKey){
-  return state.fixtures.filter(fx => localDateKey(new Date(fx.fixture.date)) === dateKey)
-    .sort((a,b)=> new Date(a.fixture.date) - new Date(b.fixture.date));
+function matchesForDate(dateKey){
+  return state.matches.filter(m=> localDateKey(m.kickoff)===dateKey)
+    .sort((a,b)=> a.kickoff - b.kickoff);
 }
 
 function renderDay(){
   elDayLabel.textContent = fmtDayLabel(state.selectedDate);
-  const list = fixturesForDate(state.selectedDate);
+  const list = matchesForDate(state.selectedDate);
   document.getElementById('prevDay').disabled = state.selectedDate <= TOURNAMENT_START;
   document.getElementById('nextDay').disabled = state.selectedDate >= TOURNAMENT_END;
-
   if(!list.length){
     elList.innerHTML = '<div class="empty-state">No hay partidos este día.<br>Usá las flechas para moverte por el calendario.</div>';
     return;
   }
-  elList.innerHTML = list.map(fx=>{
-    const st = statusInfo(fx);
-    const home = fx.teams.home, away = fx.teams.away;
-    const played = fx.fixture.status.short!=='NS' && fx.fixture.status.short!=='PST';
-    const scoreTxt = played ? `${fx.goals.home ?? '-'} : ${fx.goals.away ?? '-'}` : 'vs';
+  elList.innerHTML = list.map(m=>{
+    const st = statusInfo(m);
+    const played = m.statusState!=='pre';
+    const scoreTxt = played ? `${m.home.score ?? '-'} : ${m.away.score ?? '-'}` : 'vs';
     return `
-      <div class="match-card" data-id="${fx.fixture.id}">
+      <div class="match-card" data-id="${m.id}">
         <div class="mc-team">
-          <img class="mc-flag" src="${home.logo}" alt="" onerror="this.style.visibility='hidden'">
-          <span class="mc-name">${home.name}</span>
+          <img class="mc-flag" src="${m.home.logo}" alt="" onerror="this.style.visibility='hidden'">
+          <span class="mc-name">${m.home.name}</span>
         </div>
         <div class="mc-center">
           <span class="mc-score">${scoreTxt}</span>
-          <span class="mc-time">${fmtTime(fx.fixture.date)}</span>
+          <span class="mc-time">${fmtTime(m.kickoff)}</span>
           <span class="mc-status ${st.cls}">${st.label}</span>
         </div>
         <div class="mc-team right">
-          <img class="mc-flag" src="${away.logo}" alt="" onerror="this.style.visibility='hidden'">
-          <span class="mc-name">${away.name}</span>
+          <img class="mc-flag" src="${m.away.logo}" alt="" onerror="this.style.visibility='hidden'">
+          <span class="mc-name">${m.away.name}</span>
         </div>
       </div>`;
   }).join('');
@@ -489,71 +292,111 @@ function shiftDay(delta){
   renderDay();
 }
 
-const detailOverlay = document.getElementById('detailOverlay');
-const detailContent = document.getElementById('detailContent');
+function teamMatches(teamId){
+  return state.matches.filter(m=> m.home.id===teamId || m.away.id===teamId)
+    .sort((a,b)=> a.kickoff - b.kickoff);
+}
+function teamSide(m, teamId){ return m.home.id===teamId ? m.home : m.away; }
+function oppSide(m, teamId){ return m.home.id===teamId ? m.away : m.home; }
 
-function formDots(formArr, teamId){
-  if(!formArr.length) return '<span class="muted-text">Sin datos recientes</span>';
-  return '<div class="form-dots">' + formArr.slice(0,5).map(fx=>{
-    const isHome = fx.teams.home.id===teamId;
-    const gf = isHome?fx.goals.home:fx.goals.away;
-    const ga = isHome?fx.goals.away:fx.goals.home;
+function teamAverages(teamId){
+  const played = teamMatches(teamId).filter(m=> m.statusState==='post');
+  if(!played.length) return { gf:1.2, ga:1.2, corners:5, count:0 };
+  let gf=0, ga=0, corners=0, cCount=0;
+  played.forEach(m=>{
+    const me = teamSide(m, teamId), opp = oppSide(m, teamId);
+    gf += me.score||0; ga += opp.score||0;
+    if(me.stats && me.stats.wonCorners!=null){ corners += me.stats.wonCorners; cCount++; }
+  });
+  return {
+    gf: gf/played.length,
+    ga: ga/played.length,
+    corners: cCount ? corners/cCount : 5,
+    count: played.length
+  };
+}
+
+function teamCardsPerGame(teamId){
+  const played = teamMatches(teamId).filter(m=> m.statusState==='post');
+  if(!played.length) return 1.8;
+  let cards=0;
+  played.forEach(m=>{
+    m.details.forEach(d=>{
+      if((d.yellowCard||d.redCard) && d.team && d.team.id===teamId) cards++;
+    });
+  });
+  return cards/played.length;
+}
+
+function teamTopScorers(teamId){
+  const played = teamMatches(teamId).filter(m=> m.statusState==='post');
+  const tally = {};
+  played.forEach(m=>{
+    m.details.forEach(d=>{
+      if(d.scoringPlay && !d.ownGoal && d.team && d.team.id===teamId && d.athletesInvolved && d.athletesInvolved[0]){
+        const name = d.athletesInvolved[0].displayName;
+        tally[name] = (tally[name]||0)+1;
+      }
+    });
+  });
+  return Object.entries(tally).sort((a,b)=> b[1]-a[1]).slice(0,5);
+}
+
+function factorial(n){ let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
+function poissonPMF(lambda,k){ return Math.exp(-lambda)*Math.pow(lambda,k)/factorial(k); }
+function buildMatrix(eh,ea,maxG){
+  const m=[];
+  for(let h=0;h<=maxG;h++){ const row=[]; for(let a=0;a<=maxG;a++) row.push(poissonPMF(eh,h)*poissonPMF(ea,a)); m.push(row); }
+  return m;
+}
+function summarize(matrix){
+  let pH=0,pD=0,pA=0,best={h:0,a:0,p:-1};
+  for(let h=0;h<matrix.length;h++) for(let a=0;a<matrix[h].length;a++){
+    const p=matrix[h][a];
+    if(h>a) pH+=p; else if(h===a) pD+=p; else pA+=p;
+    if(p>best.p) best={h,a,p};
+  }
+  return {pH,pD,pA,best};
+}
+
+function computePrediction(homeId, awayId){
+  const A = teamAverages(homeId), B = teamAverages(awayId);
+  let expHome = (A.gf + B.ga)/2;
+  let expAway = (B.gf + A.ga)/2;
+  expHome = Math.min(Math.max(expHome,0.3),3.6);
+  expAway = Math.min(Math.max(expAway,0.3),3.6);
+  const matrix = buildMatrix(expHome, expAway, 6);
+  const {pH,pD,pA,best} = summarize(matrix);
+  let probHome = Math.round(pH*100), probAway = Math.round(pA*100);
+  let probDraw = 100-probHome-probAway; if(probDraw<0) probDraw=0;
+  const cardsEstimate = Math.round((teamCardsPerGame(homeId)+teamCardsPerGame(awayId))*10)/10;
+  const cornersEstimate = Math.round((A.corners+B.corners)*10)/10;
+  return {
+    expHome: Math.round(expHome*10)/10, expAway: Math.round(expAway*10)/10,
+    predHome: best.h, predAway: best.a,
+    probHome, probDraw, probAway, cardsEstimate, cornersEstimate
+  };
+}
+
+function formDots(formStr){
+  if(!formStr) return '<span class="muted-text">Sin datos recientes</span>';
+  return '<div class="form-dots">' + formStr.split('').slice(-5).map(ch=>{
     let cls='d', letter='E';
-    if(gf>ga){cls='w';letter='G';} else if(gf<ga){cls='l';letter='P';}
+    if(ch==='W'){cls='w';letter='G';} else if(ch==='L'){cls='l';letter='P';}
     return `<span class="dot ${cls}">${letter}</span>`;
   }).join('') + '</div>';
 }
 
-async function openMatchDetail(fixtureId){
-  const fx = state.fixtures.find(f=> f.fixture.id===Number(fixtureId));
-  if(!fx) return;
+const detailOverlay = document.getElementById('detailOverlay');
+const detailContent = document.getElementById('detailContent');
+
+function openMatchDetail(id){
+  const m = state.matches.find(x=> x.id===id);
+  if(!m) return;
   detailOverlay.classList.remove('hidden');
-  detailContent.innerHTML = renderDetailHeader(fx) + '<div class="skeleton"><div class="spinner"></div>Calculando predicción…</div>';
-
-  try{
-    const homeId = fx.teams.home.id, awayId = fx.teams.away.id;
-    const [homeBundle, awayBundle, h2h, scorers] = await Promise.all([
-      getTeamBundle(homeId),
-      getTeamBundle(awayId),
-      getH2H(homeId, awayId),
-      getTopScorers(),
-    ]);
-    const pred = computePrediction(homeId, awayId, homeBundle, awayBundle);
-    detailContent.innerHTML = renderDetailHeader(fx) + renderDetailBody(fx, pred, homeBundle, awayBundle, h2h, scorers);
-  }catch(err){
-    detailContent.innerHTML = renderDetailHeader(fx) + renderError(err);
-  }
-}
-
-function renderDetailHeader(fx){
-  const home=fx.teams.home, away=fx.teams.away;
-  return `
-    <div class="detail-header">
-      <div class="detail-round">${translateRound(fx.league.round)}</div>
-      <div class="detail-venue">${fx.fixture.venue.name || ''}${fx.fixture.venue.city? ', '+fx.fixture.venue.city:''}</div>
-      <div class="detail-teams">
-        <div class="dt-team"><img class="dt-flag" src="${home.logo}" alt="" onerror="this.style.visibility='hidden'"><div class="dt-name">${home.name}</div></div>
-        <div class="dt-vs">VS</div>
-        <div class="dt-team"><img class="dt-flag" src="${away.logo}" alt="" onerror="this.style.visibility='hidden'"><div class="dt-name">${away.name}</div></div>
-      </div>
-      <div class="detail-kickoff">${new Date(fx.fixture.date).toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'})} · ${fmtTime(fx.fixture.date)}</div>
-    </div>`;
-}
-
-function renderError(err){
-  const msg = String(err.message||err);
-  let text = 'No se pudo cargar la información. Probá de nuevo en un momento.';
-  if(msg.includes('AUTH')) text = 'La clave de API no es válida o todavía no está activa. Revisala en Configuración.';
-  if(msg.includes('RATE_LIMIT')) text = 'Llegaste al límite diario de consultas a la API. Probá más tarde.';
-  if(msg.includes('NETWORK')) text = 'No hay conexión a internet en este momento.';
-  return `<div class="error-banner">${text}</div>`;
-}
-
-function renderDetailBody(fx, pred, homeBundle, awayBundle, h2h, scorers){
-  const home=fx.teams.home, away=fx.teams.away;
-  const finished = ['FT','AET','PEN'].includes(fx.fixture.status.short);
-
-  const actualScore = finished ? `<div class="sb-actual">Resultado real: ${fx.goals.home} : ${fx.goals.away}</div>` : '';
+  const pred = computePrediction(m.home.id, m.away.id);
+  const finished = m.statusState==='post';
+  const actualScore = finished ? `<div class="sb-actual">Resultado real: ${m.home.score} : ${m.away.score}</div>` : '';
 
   const scoreboard = `
     <div class="scoreboard">
@@ -565,9 +408,9 @@ function renderDetailBody(fx, pred, homeBundle, awayBundle, h2h, scorers){
         <div style="width:${pred.probAway}%"></div>
       </div>
       <div class="problabels">
-        <span>${home.name} <b>${pred.probHome}%</b></span>
+        <span>${m.home.name} <b>${pred.probHome}%</b></span>
         <span>Empate <b>${pred.probDraw}%</b></span>
-        <span>${away.name} <b>${pred.probAway}%</b></span>
+        <span>${m.away.name} <b>${pred.probAway}%</b></span>
       </div>
       ${actualScore}
     </div>`;
@@ -577,105 +420,74 @@ function renderDetailBody(fx, pred, homeBundle, awayBundle, h2h, scorers){
       <div class="stat-card">
         <div class="label">Goles esperados</div>
         <div class="value">${pred.expHome} – ${pred.expAway}</div>
-        <div class="note">${home.name.split(' ')[0]} vs ${away.name.split(' ')[0]}</div>
+        <div class="note">${m.home.name.split(' ')[0]} vs ${m.away.name.split(' ')[0]}</div>
       </div>
       <div class="stat-card">
         <div class="label">Tarjetas estimadas</div>
         <div class="value">~${pred.cardsEstimate}</div>
-        <div class="note">Basado en promedio del torneo</div>
+        <div class="note">Basado en datos del torneo</div>
       </div>
       <div class="stat-card">
         <div class="label">Córners estimados</div>
         <div class="value">~${pred.cornersEstimate}</div>
-        <div class="note">Estimación por tendencia ofensiva</div>
+        <div class="note">Promedio real de ambos equipos</div>
       </div>
       <div class="stat-card">
         <div class="label">Partidos jugados</div>
-        <div class="value">${(homeBundle.stats?.fixtures?.played?.total)||0} / ${(awayBundle.stats?.fixtures?.played?.total)||0}</div>
+        <div class="value">${teamAverages(m.home.id).count} / ${teamAverages(m.away.id).count}</div>
         <div class="note">En el torneo (local/visitante)</div>
       </div>
     </div>`;
 
   const formSection = `
     <div class="section-title"><span class="gold">●</span> Forma reciente</div>
-    <div class="form-row"><span class="team">${home.name}</span>${formDots(homeBundle.form, home.id)}</div>
-    <div class="form-row"><span class="team">${away.name}</span>${formDots(awayBundle.form, away.id)}</div>`;
+    <div class="form-row"><span class="team">${m.home.name}</span>${formDots(m.home.form)}</div>
+    <div class="form-row"><span class="team">${m.away.name}</span>${formDots(m.away.form)}</div>`;
 
-  const candidates = scorers.filter(p=>{
-    const t = p.statistics && p.statistics[0] && p.statistics[0].team;
-    return t && (t.id===home.id || t.id===away.id);
-  }).sort((a,b)=> (b.statistics[0].goals.total||0) - (a.statistics[0].goals.total||0)).slice(0,6);
+  const homeScorers = teamTopScorers(m.home.id);
+  const awayScorers = teamTopScorers(m.away.id);
+  const allScorers = [...homeScorers.map(s=>({...{name:s[0],goals:s[1]}, team:m.home.name})), ...awayScorers.map(s=>({name:s[0],goals:s[1],team:m.away.name}))]
+    .sort((a,b)=> b.goals-a.goals);
 
   const playersSection = `
-    <div class="section-title"><span class="gold">●</span> Quién puede anotar o asistir</div>
-    ${candidates.length ? candidates.map(p=>{
-      const s = p.statistics[0];
-      const goals = s.goals.total||0, assists = s.goals.assists||0;
-      return `<div class="player-row">
-        <img class="player-photo" src="${p.player.photo}" alt="" onerror="this.style.visibility='hidden'">
+    <div class="section-title"><span class="gold">●</span> Goleadores destacados</div>
+    ${allScorers.length ? allScorers.map(p=>`
+      <div class="player-row">
+        <div class="player-dot">⚽</div>
         <div class="player-info">
-          <div class="player-name">${p.player.name}</div>
-          <div class="player-team">${s.team.name}</div>
+          <div class="player-name">${p.name}</div>
+          <div class="player-team">${p.team}</div>
         </div>
-        <div class="player-stat">${goals}G ${assists}A</div>
-      </div>`;
-    }).join('') : '<p class="muted-text">Todavía sin goles registrados en el torneo para estos equipos.</p>'}`;
+        <div class="player-stat">${p.goals} gol${p.goals>1?'es':''}</div>
+      </div>`).join('') : '<p class="muted-text">Todavía sin goles registrados en el torneo para estos equipos.</p>'}`;
 
-  const h2hSection = `
-    <div class="section-title"><span class="gold">●</span> Últimos enfrentamientos</div>
-    ${h2h.length ? h2h.slice(0,5).map(m=>`
-      <div class="h2h-row">
-        <span>${m.teams.home.name} vs ${m.teams.away.name}</span>
-        <span class="h2h-score">${m.goals.home ?? '-'} : ${m.goals.away ?? '-'}</span>
-      </div>`).join('') : '<p class="muted-text">Sin enfrentamientos previos registrados.</p>'}`;
-
-  return scoreboard + statGrid + formSection + playersSection + h2hSection;
+  detailContent.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-round">${translateRound(m.groupNote)}</div>
+      <div class="detail-venue">${m.venue}${m.city? ', '+m.city:''}</div>
+      <div class="detail-teams">
+        <div class="dt-team"><img class="dt-flag" src="${m.home.logo}" alt="" onerror="this.style.visibility='hidden'"><div class="dt-name">${m.home.name}</div></div>
+        <div class="dt-vs">VS</div>
+        <div class="dt-team"><img class="dt-flag" src="${m.away.logo}" alt="" onerror="this.style.visibility='hidden'"><div class="dt-name">${m.away.name}</div></div>
+      </div>
+      <div class="detail-kickoff">${m.kickoff.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'})} · ${fmtTime(m.kickoff)}</div>
+    </div>
+    ${scoreboard}${statGrid}${formSection}${playersSection}`;
 }
-
-const settingsOverlay = document.getElementById('settingsOverlay');
-const apiKeyInput = document.getElementById('apiKeyInput');
-const keyStatus = document.getElementById('keyStatus');
-
-async function openSettings(){
-  settingsOverlay.classList.remove('hidden');
-  const saved = await cacheGet('wc26:keymeta');
-  keyStatus.textContent = saved ? `Clave guardada (termina en …${saved.last4})` : '';
-}
-
-document.getElementById('saveKeyBtn').addEventListener('click', async ()=>{
-  const val = apiKeyInput.value.trim();
-  if(!val){ keyStatus.textContent = 'Pegá una clave válida.'; return; }
-  state.apiKey = val;
-  await cacheSet('wc26:key', val);
-  await cacheSet('wc26:keymeta', { last4: val.slice(-4) });
-  keyStatus.textContent = 'Verificando…';
-  try{
-    await loadFixtures(true);
-    settingsOverlay.classList.add('hidden');
-    initDateAndRender();
-  }catch(err){
-    keyStatus.textContent = String(err.message||err).includes('AUTH')
-      ? 'Clave inválida. Revisala e intentá de nuevo.'
-      : 'No se pudo verificar la clave ahora. Probá de nuevo.';
-  }
-});
-
-document.getElementById('settingsBtn').addEventListener('click', openSettings);
 
 document.querySelectorAll('[data-close]').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const which = btn.getAttribute('data-close');
-    document.getElementById(which+'Overlay').classList.add('hidden');
-  });
+  btn.addEventListener('click', ()=> document.getElementById('detailOverlay').classList.add('hidden'));
 });
-
-elList.addEventListener('click', (e)=>{
+elList.addEventListener('click', e=>{
   const card = e.target.closest('.match-card');
   if(card) openMatchDetail(card.getAttribute('data-id'));
 });
-
 document.getElementById('prevDay').addEventListener('click', ()=> shiftDay(-1));
 document.getElementById('nextDay').addEventListener('click', ()=> shiftDay(1));
+document.getElementById('refreshBtn').addEventListener('click', async ()=>{
+  elList.innerHTML = '<div class="skeleton"><div class="spinner"></div>Actualizando…</div>';
+  try{ await loadMatches(true); renderDay(); }catch(e){ elList.innerHTML = '<div class="error-banner">No se pudo actualizar. Probá de nuevo.</div>'; }
+});
 
 function initDateAndRender(){
   const todayKey = localDateKey(new Date());
@@ -687,22 +499,14 @@ function initDateAndRender(){
 }
 
 async function init(){
-  const savedKey = await cacheGet('wc26:key');
-  if(!savedKey){
-    openSettings();
-    elList.innerHTML = '<div class="empty-state">Cargá tu clave de API-Football en Configuración (⚙) para ver los partidos.</div>';
-    return;
-  }
-  state.apiKey = savedKey;
   elList.innerHTML = '<div class="skeleton"><div class="spinner"></div>Cargando partidos del Mundial…</div>';
   try{
-    await loadFixtures(false);
+    await loadMatches(false);
     initDateAndRender();
   }catch(err){
-    elList.innerHTML = renderError(err);
+    elList.innerHTML = '<div class="error-banner">No se pudo cargar la información. Probá de nuevo en un momento.</div>';
   }
 }
-
 init();
 })();
 </script>
